@@ -1,0 +1,123 @@
+openapi: '3.0.3'
+info:
+  title: json-rpc
+  version: '1.1'
+paths:
+  /:
+    post:
+      operationId: JsonJrcReq
+      x-microcks-operation:
+        dispatcher: SCRIPT
+        dispatcherRules: |-
+          def json = new groovy.json.JsonSlurper().parseText(mockRequest.requestContent);
+          def jsonrpc = json.jsonrpc
+          def id = json.id
+          def method = json.method
+          def num = json.get("params").get("num")
+          if (method == "first" && num == 1) {
+              return "first_num_1"
+          } else if (method == "second" && num == 2) {
+              return "second_num_2"
+          }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jsonrpc:
+                  type: string
+                  example: "2.0"
+                id:
+                  type: string
+                  example: "1234567890"
+                method:
+                  type: string
+                  example: "user.login"
+                params:
+                  type: object
+                  properties:
+                    num:
+                     type: integer
+                     example: 1
+            examples:
+              first_num_1:
+                value:
+                  method: "first"
+                  params:
+                    num: 1
+              second_num_2:
+                value:
+                  method: "second"
+                  params:
+                    num: 2
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jsonrpc:
+                    type: string
+                    example: "2.0"
+                  id:
+                    type: string
+                    example: "1234567890"
+                  method:
+                    type: string
+                    example: "aaaa"
+                  result:
+                    type: object
+                    properties:
+                      schema:
+                        oneOf:
+                          - $ref: '#/components/schemas/exampleResponseBody'
+                          - type: array
+                            items:
+                              $ref: '#/components/schemas/exampleResponseBody'
+              examples:
+                first_num_1:
+                  value: |-
+                    {
+                      "jsonrpc": "{{request.body/jsonrpc}}",
+                      "id": "{{request.body/id}}",
+                      "method": "{{request.body/method}}",
+                      "result": {
+                        "subject": "Biba",
+                        "object": "Boba",
+                        "num": {{request.body/params/num}}
+                      }
+                    }
+                second_num_2:
+                  value: |-
+                    {
+                      "jsonrpc": "{{request.body/jsonrpc}}",
+                      "id": "{{request.body/id}}",
+                      "method": "{{request.body/method}}",
+                      "result": [
+                        {
+                        "subject": "Pupa",
+                        "object": "Lupa",
+                        "num": {{request.body/params/num}}
+                      },
+                      {
+                        "subject": "Biba",
+                        "object": "Boba",
+                        "num": {{request.body/params/num}}
+                      }
+                        ]
+                    }
+components:
+  schemas:
+    exampleResponseBody:
+      type: object
+      properties:
+        subject:
+          type: string
+        object:
+          type: string
+        num:
+          type: integer
